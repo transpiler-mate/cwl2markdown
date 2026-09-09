@@ -41,14 +41,10 @@ classifiers = [
   "Programming Language :: Python :: Implementation :: PyPy",
 ]
 dependencies = [
-  "transpiler-mate-api @ git+https://github.com/sim13pods/transpiler-mate-api.git@main",
-  "Jinja2==3.1.6",
+  "transpiler-mate-api==1.0.0",
+  "Jinja2>=3.1.6",
   "loguru==0.7.3"
 ]
-
-# TODO remove me as soon as transpiler-mate-api is on PyPI
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [project.entry-points."transpiler_mate.plugins"]
 cwl2markdown = "cwl2markdown.plugin:cwl2markdown"
