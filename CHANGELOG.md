@@ -37,11 +37,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+## [0.2.0] - 2026-09-16
+
+### Fixed
+
+- Software Metadata `operating_system` and `software_requirements` are optional.
+
 ## [0.1.0] - 2026-09-09
 
 ### Added
 
 - Initial project release.
 
-[Unreleased]: https://github.com/Transpiler-Mate/cwl2markdown/compare/0.1.0...HEAD
+[Unreleased]: https://github.com/Transpiler-Mate/cwl2markdown/compare/0.2.0...HEAD
+[0.2.0]: https://github.com/Transpiler-Mate/cwl2markdown/compare/0.1.0...0.2.0
 [0.1.0]: https://github.com/Transpiler-Mate/cwl2markdown/releases/tag/0.1.0
