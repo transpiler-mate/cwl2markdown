@@ -33,10 +33,17 @@ The are no contributors for this project.
 ## Runtime environment
 
 ### Supported Operating Systems
-
+{% if software_application.operating_system %}
 {% for operating_system in software_application.operating_system %}- {{operating_system}}
 {% endfor %}
-### Requirements
+{% else %}
+The are no Supported Operating Systems specified for this project.
+{% endif %}
 
+### Requirements
+{% if software_application.software_requirements %}
 {% for software_requirement in software_application.software_requirements %}- [{{software_requirement}}]({{software_requirement}})
 {% endfor %}
+{% else %}
+The are no Requirements specified for this project.
+{% endif %}
