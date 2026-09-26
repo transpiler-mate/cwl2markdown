@@ -1,4 +1,4 @@
-# Copyright 2026 Transpiler-Mate
+# Copyright 2026 Terradue
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,9 +49,7 @@ InputRecordSchema = (
 )
 
 SchemaDefRequirement = (
-    cwl_v1_0.SchemaDefRequirement
-    | cwl_v1_1.SchemaDefRequirement
-    | cwl_v1_2.SchemaDefRequirement
+    cwl_v1_0.SchemaDefRequirement | cwl_v1_1.SchemaDefRequirement | cwl_v1_2.SchemaDefRequirement
 )
 
 
@@ -62,9 +60,7 @@ def normalize_author(
     authors = software_application.author
     author_list = authors if isinstance(authors, list) else [authors]
     return [
-        author
-        if isinstance(author, AuthorRole)
-        else AuthorRole(role_name=NA_ROLE, author=author)
+        author if isinstance(author, AuthorRole) else AuthorRole(role_name=NA_ROLE, author=author)
         for author in author_list
     ]
 
@@ -77,9 +73,7 @@ def normalize_contributor(
     if contributors is None:
         return []
 
-    contributor_list = (
-        contributors if isinstance(contributors, list) else [contributors]
-    )
+    contributor_list = contributors if isinstance(contributors, list) else [contributors]
     return [
         contributor
         if isinstance(contributor, ContributorRole)
@@ -88,21 +82,18 @@ def normalize_contributor(
     ]
 
 
-def type_to_string(typ: Any, parent: Process) -> str:  # noqa: C901
-    """
-    Serializes a CWL type to a human-readable string.
+def type_to_string(typ: object, parent: Process) -> str:
+    """Serialize a CWL type as Markdown with HTML lists for compound types.
 
     Args:
-        `typ` (`Any`): Any CWL type
-
-    Returns:
-        `str`: The human-readable string representing the input CWL type.
+        typ: CWL type declaration or Python type to render.
+        parent: Process whose schema definitions resolve named type references.
     """
     if get_origin(typ) in (Union, types.UnionType):
         return f"One of:<ul>{''.join(f'<li>{type_to_string(inner_type, parent)}</li>' for inner_type in get_args(typ))}</ul>"
 
     if isinstance(typ, list):
-        return f"One of:<ul>{''.join(f'<li>{type_to_string(t, parent)}</li>' for t in typ)}</ul>"
+        return f"One of:<ul>{''.join(f'<li>{type_to_string(inner_type, parent)}</li>' for inner_type in typ)}</ul>"
 
     if hasattr(typ, "items"):
         return f"`array` of {type_to_string(typ.items, parent)}"
@@ -119,6 +110,11 @@ def type_to_string(typ: Any, parent: Process) -> str:  # noqa: C901
 
         return f"[{typ.name.split('#')[-1]}]({typ.name}):<ul>{fields}</ul>"
 
+    return _named_type_to_string(typ, parent)
+
+
+def _named_type_to_string(typ: object, parent: Process) -> str:
+    """Render named CWL types and enum symbols."""
     if isinstance(typ, str):
         type_str = typ
     elif hasattr(typ, "__name__"):
@@ -129,31 +125,27 @@ def type_to_string(typ: Any, parent: Process) -> str:  # noqa: C901
         # last hope to follow back
         type_str = str(typ)
 
-    if "#" in type_str:  # we can assume it is an URL
-        if parent and parent.requirements:
-            for requirement in parent.requirements:
-                if isinstance(requirement, SchemaDefRequirement):
-                    for inner_type in requirement.types:
-                        if type_str == inner_type.name:
-                            return type_to_string(inner_type, parent)
+    if "#" in type_str:
+        return _reference_to_string(type_str, parent)
 
-        # follow up on plain link if not found
-        return f"[{type_str.split('#')[-1]}]({type_str})"
+    if type_str in ("Any", "Directory", "File"):
+        return f"[{type_str}](https://www.commonwl.org/v1.2/Workflow.html#{type_str})"
 
-    for special_type in ["Any", "Directory", "File"]:
-        if special_type == type_str:
-            return (
-                f"[{type_str}](https://www.commonwl.org/v1.2/Workflow.html#{type_str})"
-            )
-
-    if type_str == "enum":
-        symbols = "".join(
-            f"<li>`{symbol.split('/')[-1]}`</li>"
-            for symbol in typ.symbols  # type: ignore
-        )
+    if type_str == "enum" and hasattr(typ, "symbols"):
+        symbols = "".join(f"<li>`{symbol.split('/')[-1]}`</li>" for symbol in typ.symbols)
         return f"[{type_str}](https://www.commonwl.org/v1.2/Workflow.html#{type(typ).__name__}):<ul>{symbols}</ul>"
 
     return f"[{type_str}](https://www.commonwl.org/v1.2/Workflow.html#CWLType)"
+
+
+def _reference_to_string(type_name: str, parent: Process) -> str:
+    """Render a schema definition when available, or a link to its reference."""
+    for requirement in parent.requirements or []:
+        if isinstance(requirement, SchemaDefRequirement):
+            for inner_type in requirement.types:
+                if type_name == inner_type.name:
+                    return type_to_string(inner_type, parent)
+    return f"[{type_name.split('#')[-1]}]({type_name})"
 
 
 def _get_version() -> str:
@@ -172,19 +164,18 @@ def _to_mapping(functions: list[Any]) -> dict[str, Any]:
     return mapping
 
 
-def nullable(type_: Any) -> bool:
-    return (
-        isinstance(type_, list)
-        and "null" in type_
-        or hasattr(type_, "items")
-        and nullable(type_.items)  # type: ignore
+def nullable(type_: object) -> bool:
+    """Check whether a CWL union or array item type includes null."""
+    return (isinstance(type_, list) and "null" in type_) or (
+        hasattr(type_, "items") and nullable(type_.items)
     )
 
 
-def get_exection_command(clt: Any) -> str:
+def get_exection_command(clt: object) -> str:
+    """Render a command line with placeholders for dynamically computed arguments."""
     result: list[str] = []
 
-    def _append_arg(arg: Any):
+    def _append_arg(arg: object) -> None:
         if isinstance(arg, list):
             for arg_i in arg:
                 _append_arg(arg_i)
@@ -193,7 +184,7 @@ def get_exection_command(clt: Any) -> str:
         else:
             result.append("<ARGUMENT_DYNAMICALLY_SET>")
 
-    def _check_then_append(arg_name: str):
+    def _check_then_append(arg_name: str) -> None:
         if hasattr(clt, arg_name) and getattr(clt, arg_name):
             _append_arg(getattr(clt, arg_name))
 
@@ -211,9 +202,7 @@ class CWL2MarkdownOptions(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    output: Annotated[
-        Path, Field(default=Path("./"), description="The output directory path")
-    ]
+    output: Annotated[Path, Field(default=Path("./"), description="The output directory path")]
 
 
 @transpiler_plugin(
@@ -247,7 +236,7 @@ def cwl2markdown(context: TranspilerContext, options: CWL2MarkdownOptions) -> No
         for workflow in context.get_processes_by_type(
             Workflow, [context.process_id] if context.process_id else None
         ):
-            target: Path = Path(options.output, f"{workflow.id}.md")
+            target: Path = Path(options.output, f"{workflow.id}.md.jinja")
             logger.info(f"Rendering Markdown documentation to {target.absolute()}...")
 
             with target.open("w") as output_stream:
@@ -262,9 +251,7 @@ def cwl2markdown(context: TranspilerContext, options: CWL2MarkdownOptions) -> No
                         index=context.document,
                     )
                 )
-            logger.success(
-                f"Markdown documentation successfully serialized to {target.absolute()}"
-            )
+            logger.success(f"Markdown documentation successfully serialized to {target.absolute()}")
     except Exception as e:
         raise PluginExecutionError(
             f"An error occurred when serializing to {options.output.absolute()}, see nested exception"

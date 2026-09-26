@@ -1,0 +1,6 @@
+{% include "metadata.md.jinja" %}
+
+---
+
+{% import "workflow.md.jinja" as wf with context %}
+{{wf.serialize_workflow(workflow)}}
