@@ -1,3 +1,18 @@
+# Copyright 2026 Terradue
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+from cwl_utils.parser import cwl_v1_2
 from transpiler_mate.api import (
     AuthorRole,
     ContributorRole,
@@ -6,7 +21,7 @@ from transpiler_mate.api import (
     SoftwareApplication,
 )
 
-from cwl2markdown.plugin import normalize_author, normalize_contributor
+from cwl2markdown.plugin import normalize_author, normalize_contributor, nullable, type_to_string
 
 
 def _person(given_name: str) -> Person:
@@ -44,3 +59,48 @@ def test_normalize_contributor_handles_missing_contributors() -> None:
     metadata = SoftwareApplication.model_construct(contributor=None)
 
     assert normalize_contributor(metadata) == []
+
+
+def test_type_to_string_resolves_schema_references() -> None:
+    schema = cwl_v1_2.InputEnumSchema(
+        type_="enum",
+        name="https://example.org/types#Choice",
+        symbols=["https://example.org/types/first", "https://example.org/types/second"],
+    )
+    workflow = cwl_v1_2.Workflow(
+        inputs=[],
+        outputs=[],
+        steps=[],
+        requirements=[cwl_v1_2.SchemaDefRequirement(types=[schema])],
+    )
+
+    assert type_to_string(schema.name, workflow) == (
+        "[enum](https://www.commonwl.org/v1.2/Workflow.html#InputEnumSchema):"
+        "<ul><li>`first`</li><li>`second`</li></ul>"
+    )
+    assert type_to_string("https://example.org/types#Missing", workflow) == (
+        "[Missing](https://example.org/types#Missing)"
+    )
+
+
+def test_type_to_string_renders_nested_arrays_and_unions() -> None:
+    workflow = cwl_v1_2.Workflow(inputs=[], outputs=[], steps=[])
+    schema = cwl_v1_2.InputArraySchema(type_="array", items=["null", "File"])
+
+    assert type_to_string(schema, workflow) == (
+        "`array` of One of:<ul>"
+        "<li>[null](https://www.commonwl.org/v1.2/Workflow.html#CWLType)</li>"
+        "<li>[File](https://www.commonwl.org/v1.2/Workflow.html#File)</li></ul>"
+    )
+    assert nullable(schema)
+    assert not nullable(cwl_v1_2.InputArraySchema(type_="array", items="File"))
+
+
+def test_type_to_string_renders_python_unions() -> None:
+    workflow = cwl_v1_2.Workflow(inputs=[], outputs=[], steps=[])
+
+    assert type_to_string(str | int, workflow) == (
+        "One of:<ul>"
+        "<li>[str](https://www.commonwl.org/v1.2/Workflow.html#CWLType)</li>"
+        "<li>[int](https://www.commonwl.org/v1.2/Workflow.html#CWLType)</li></ul>"
+    )

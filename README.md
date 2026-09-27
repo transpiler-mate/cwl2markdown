@@ -1,5 +1,5 @@
 <!--
-Copyright 2026 Transpiler-Mate
+Copyright 2026 Terradue
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ limitations under the License.
 
 [![PyPI - Version](https://img.shields.io/pypi/v/cwl2markdown.svg)](https://pypi.org/project/cwl2markdown)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/cwl2markdown.svg)](https://pypi.org/project/cwl2markdown)
+[![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/transpiler-mate/cwl2markdown/package.yaml?branch=develop&event=push&label=build&logo=githubactions)](https://github.com/transpiler-mate/cwl2markdown/actions/workflows/package.yaml?query=branch%3Adevelop)
+[![Code coverage](https://img.shields.io/codecov/c/github/transpiler-mate/cwl2markdown/develop?logo=codecov)](https://app.codecov.io/gh/transpiler-mate/cwl2markdown/tree/develop)
 
 CWL to Markdown Transpiler-Mate plugin. It generates one Markdown page per CWL
 workflow and renders document-level Schema.org `SoftwareApplication` metadata.
