@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
+## [0.2.2] - 2026-10-13
 
 ### Changed
 
@@ -32,6 +32,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 
 ### Fixed
+
+- jinja2.exceptions.TemplateNotFound: index.md
 
 ### Security
 
@@ -55,7 +57,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Initial project release.
 
-[Unreleased]: https://github.com/Transpiler-Mate/cwl2markdown/compare/0.2.1...HEAD
-[0.2.1]: https://github.com/Transpiler-Mate/cwl2markdown/compare/0.2.0...0.2.1
-[0.2.0]: https://github.com/Transpiler-Mate/cwl2markdown/compare/0.1.0...0.2.0
-[0.1.0]: https://github.com/Transpiler-Mate/cwl2markdown/releases/tag/0.1.0
+[Unreleased]: https://github.com/transpiler-mate/cwl2markdown/compare/0.2.2...HEAD
+[0.2.2]: https://github.com/transpiler-mate/cwl2markdown/compare/0.2.1...0.2.2
+[0.2.1]: https://github.com/transpiler-mate/cwl2markdown/compare/0.2.0...0.2.1
+[0.2.0]: https://github.com/transpiler-mate/cwl2markdown/compare/0.1.0...0.2.0
+[0.1.0]: https://github.com/transpiler-mate/cwl2markdown/releases/tag/0.1.0
