@@ -12,16 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import annotations
+
+from datetime import date
+from typing import TYPE_CHECKING
+from unittest.mock import Mock
+
 from cwl_utils.parser import cwl_v1_2
+from pydantic import AnyUrl
 from transpiler_mate.api import (
     AuthorRole,
     ContributorRole,
+    CreativeWork,
     Organization,
     Person,
     SoftwareApplication,
+    TranspilerContext,
+    TranspilerContextResolver,
 )
 
-from cwl2markdown.plugin import normalize_author, normalize_contributor, nullable, type_to_string
+from cwl2markdown.plugin import (
+    CWL2MarkdownOptions,
+    cwl2markdown,
+    normalize_author,
+    normalize_contributor,
+    nullable,
+    type_to_string,
+)
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def _person(given_name: str) -> Person:
@@ -104,3 +124,37 @@ def test_type_to_string_renders_python_unions() -> None:
         "<li>[str](https://www.commonwl.org/v1.2/Workflow.html#CWLType)</li>"
         "<li>[int](https://www.commonwl.org/v1.2/Workflow.html#CWLType)</li></ul>"
     )
+
+
+def test_plugin_renders_markdown_without_jinja_filename_suffix(tmp_path: Path) -> None:
+    workflow = cwl_v1_2.Workflow(
+        id="example-workflow", cwlVersion="v1.2", inputs=[], outputs=[], steps=[]
+    )
+    metadata = SoftwareApplication(
+        name="Example application",
+        description="A minimal workflow for documentation.",
+        date_created=date(2026, 1, 1),
+        license=CreativeWork(name="Apache License 2.0", identifier="Apache-2.0"),
+        software_version="1.0.0",
+        software_help=[],
+        publisher=Organization(name="Example Organization"),
+        author=_person("Alice"),
+    )
+    context = TranspilerContext(
+        source=AnyUrl("https://example.org/workflow.cwl"),
+        metadata=metadata,
+        document={workflow.id: workflow},
+        resolver=Mock(spec=TranspilerContextResolver),
+    )
+    output_directory = tmp_path / "documentation"
+
+    cwl2markdown.execute(context, CWL2MarkdownOptions(output=output_directory))
+
+    output_file = output_directory / "example-workflow.md"
+    assert output_file.is_file()
+    assert not (output_directory / "example-workflow.md.jinja").exists()
+    markdown = output_file.read_text()
+    assert "# Example application v1.0.0" in markdown
+    assert "A minimal workflow for documentation." in markdown
+    assert "## example-workflow" in markdown
+    assert "[Workflow](https://www.commonwl.org/v1.2/Workflow.html#Workflow)" in markdown
