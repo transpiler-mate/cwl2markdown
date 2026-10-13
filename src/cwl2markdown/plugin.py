@@ -228,7 +228,7 @@ def cwl2markdown(context: TranspilerContext, options: CWL2MarkdownOptions) -> No
     )
     _jinja_environment.tests.update(_to_mapping([nullable]))
 
-    template = _jinja_environment.get_template("index.md")
+    template = _jinja_environment.get_template("index.md.jinja")
 
     try:
         options.output.mkdir(parents=True, exist_ok=True)
